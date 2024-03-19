@@ -1,0 +1,38 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+availabilityZones:  # 사용 가능한 가용 영역 목록
+  - ${AWS_REGION}a
+  - ${AWS_REGION}b
+  - ${AWS_REGION}c
+metadata:  # 클러스터 메타데이터
+  name: ${EKS_CLUSTER_NAME}  # 클러스터 이름
+  region: ${AWS_REGION}  # 클러스터 리전
+  version: '1.29'  # EKS 클러스터 버전
+  tags:  # 클러스터 태그
+    karpenter.sh/discovery: ${EKS_CLUSTER_NAME}  # Karpenter 서비스 디스커버리
+    created-by: eks-security-v2  # 생성자
+    env: ${EKS_CLUSTER_NAME}  # 클러스터 환경
+iam:  # IAM 설정
+  withOIDC: true  # OIDC(OpenID Connect) 사용 여부
+vpc:  # VPC(Virtual Private Cloud) 설정
+  cidr: 10.42.0.0/16  # VPC의 CIDR 블록
+  clusterEndpoints:  # 클러스터 엔드포인트 설정
+    privateAccess: true  # 비공개 액세스 활성화 여부
+    publicAccess: true  # 공개 액세스 활성화 여부
+addons:  # 애드온 설정
+  - name: vpc-cni  # VPC CNI(Container Network Interface) 애드온
+    version: 1.14.1  # 애드온 버전
+    configurationValues: "{\"env\":{\"ENABLE_PREFIX_DELEGATION\":\"true\", \"ENABLE_POD_ENI\":\"true\", \"POD_SECURITY_GROUP_ENFORCING_MODE\":\"standard\"},\"enableNetworkPolicy\": \"true\"}"  # 구성 값
+    resolveConflicts: overwrite  # 충돌 해결 방법
+managedNodeGroups:  # 관리형 노드 그룹 설정
+  - name: default  # 기본 관리형 노드 그룹 이름
+    desiredCapacity: 3  # 원하는 노드 용량
+    minSize: 3  # 최소 노드 크기
+    maxSize: 6  # 최대 노드 크기
+    instanceType: m5.large  # 인스턴스 유형
+    privateNetworking: true  # 프라이빗 네트워킹 사용 여부
+    releaseVersion: "1.29.0-20240129"  # 릴리스 버전
+    updateConfig:  # 업데이트 설정
+      maxUnavailablePercentage: 50  # 최대 부재율 백분율
+    labels:  # 노드 레이블
+      eks-security-default: 'yes'  # 기본 레이블
